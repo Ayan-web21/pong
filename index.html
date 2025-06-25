@@ -1,219 +1,263 @@
- <!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="en" >
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Pong Game - DVD Logo Image Ball</title>
-<style>
-  body, html {
-    margin: 0; padding: 0; height: 100%;
-    background: black;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-family: Arial, sans-serif;
-  }
-  #game {
-    position: relative;
-    width: 800px;
-    height: 500px;
-    background: #222;
-    overflow: hidden;
-    border: 2px solid white;
-  }
-  .paddle {
-    position: absolute;
-    width: 15px;
-    height: 100px;
-    background: white;
-    border-radius: 10px;
-  }
-  #playerPaddle { left: 20px; }
-  #aiPaddle { right: 20px; }
-  #ball {
-    position: absolute;
-    width: 60px;
-    height: 40px;
-    border: 3px solid white;
-    border-radius: 6px;
-    box-sizing: border-box;
-    /* color tint by border color */
-    transition: border-color 0.3s ease;
-  }
-  #ball img {
-    width: 100%;
-    height: 100%;
-    display: block;
-    border-radius: 6px;
-    user-select: none;
-    pointer-events: none;
-  }
-  #scoreBoard {
-    position: absolute;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    color: white;
-    font-size: 30px;
-    user-select: none;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pong Game - DVD Logo Ball with Difficulty</title>
+  <style>
+    body, html {
+      margin: 0; padding: 0; height: 100%;
+      background: black;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: Arial, sans-serif;
+      user-select: none;
+    }
+    #game {
+      position: relative;
+      width: 800px;
+      height: 500px;
+      background: #222;
+      overflow: hidden;
+      border: 2px solid white;
+      display: none;
+    }
+    .paddle {
+      position: absolute;
+      width: 15px;
+      height: 100px;
+      background: white;
+      border-radius: 10px;
+    }
+    #playerPaddle { left: 20px; }
+    #aiPaddle { right: 20px; }
+    #ball {
+      position: absolute;
+      width: 60px;
+      height: 40px;
+      border: 3px solid white;
+      border-radius: 6px;
+      box-sizing: border-box;
+      transition: border-color 0.3s ease;
+    }
+    #ball img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      border-radius: 6px;
+      pointer-events: none;
+    }
+    #scoreBoard {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: white;
+      font-size: 30px;
+    }
+    #difficultySelection {
+      color: white;
+      text-align: center;
+    }
+    #difficultySelection h2 {
+      margin-bottom: 20px;
+    }
+    .diff-btn {
+      background: #2980b9;
+      border: none;
+      color: white;
+      padding: 12px 25px;
+      margin: 0 10px;
+      font-size: 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    .diff-btn:hover {
+      background: #3498db;
+    }
+  </style>
 </head>
 <body>
-<div id="game">
-  <div id="playerPaddle" class="paddle"></div>
-  <div id="aiPaddle" class="paddle"></div>
-  <div id="ball">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/DVD_logo.svg/1200px-DVD_logo.svg.png" alt="DVD Logo" />
+  <div id="difficultySelection">
+    <h2>Select Difficulty</h2>
+    <button class="diff-btn" data-difficulty="easy">Easy</button>
+    <button class="diff-btn" data-difficulty="medium">Medium</button>
+    <button class="diff-btn" data-difficulty="hard">Hard</button>
   </div>
-  <div id="scoreBoard"><span id="playerScore">0</span> : <span id="aiScore">0</span></div>
-</div>
 
-<script>
-  const game = document.getElementById('game');
-  const playerPaddle = document.getElementById('playerPaddle');
-  const aiPaddle = document.getElementById('aiPaddle');
-  const ball = document.getElementById('ball');
-  const playerScoreEl = document.getElementById('playerScore');
-  const aiScoreEl = document.getElementById('aiScore');
+  <div id="game">
+    <div id="playerPaddle" class="paddle"></div>
+    <div id="aiPaddle" class="paddle"></div>
+    <div id="ball">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/DVD_logo.svg/1200px-DVD_logo.svg.png" alt="DVD Logo" />
+    </div>
+    <div id="scoreBoard"><span id="playerScore">0</span> : <span id="aiScore">0</span></div>
+  </div>
 
-  const gameHeight = game.clientHeight;
-  const gameWidth = game.clientWidth;
+  <script>
+    const difficultySelection = document.getElementById('difficultySelection');
+    const game = document.getElementById('game');
+    const playerPaddle = document.getElementById('playerPaddle');
+    const aiPaddle = document.getElementById('aiPaddle');
+    const ball = document.getElementById('ball');
+    const playerScoreEl = document.getElementById('playerScore');
+    const aiScoreEl = document.getElementById('aiScore');
 
-  let playerScore = 0;
-  let aiScore = 0;
+    const gameHeight = 500; // fixed for convenience
+    const gameWidth = 800;
 
-  const paddleHeight = playerPaddle.clientHeight;
-  const ballWidth = ball.clientWidth;
-  const ballHeight = ball.clientHeight;
+    let playerScore = 0;
+    let aiScore = 0;
 
-  let ballPos = { x: gameWidth / 2 - ballWidth / 2, y: gameHeight / 2 - ballHeight / 2 };
-  let ballSpeed = { x: 4, y: 4 };
+    const paddleHeight = 100;
+    const ballWidth = 60;
+    const ballHeight = 40;
 
-  let playerPaddlePos = gameHeight / 2 - paddleHeight / 2;
-  let aiPaddlePos = gameHeight / 2 - paddleHeight / 2;
+    let ballPos = { x: gameWidth / 2 - ballWidth / 2, y: gameHeight / 2 - ballHeight / 2 };
+    let ballSpeed = { x: 4, y: 4 };
 
-  const paddleSpeed = 8;
+    let playerPaddlePos = gameHeight / 2 - paddleHeight / 2;
+    let aiPaddlePos = gameHeight / 2 - paddleHeight / 2;
 
-  const keys = {};
+    const paddleSpeed = 8;
+    let aiSpeedMultiplier = 1.6;
+    let ballInitialSpeed = 4;
 
-  // Colors for border on paddle hit (bright colors)
-  const colors = [
-    '#e74c3c', // red
-    '#27ae60', // green
-    '#f39c12', // orange
-    '#2980b9', // blue
-    '#8e44ad', // purple
-    '#1abc9c', // turquoise
-    '#c0392b', // dark red
-    '#d35400', // dark orange
-  ];
+    const keys = {};
 
-  function randomColor(exclude) {
-    let filtered = colors.filter(c => c !== exclude);
-    return filtered[Math.floor(Math.random() * filtered.length)];
-  }
+    const colors = [
+      '#e74c3c', '#27ae60', '#f39c12', '#2980b9',
+      '#8e44ad', '#1abc9c', '#c0392b', '#d35400'
+    ];
 
-  window.addEventListener('keydown', (e) => {
-    keys[e.key.toLowerCase()] = true;
-  });
-  window.addEventListener('keyup', (e) => {
-    keys[e.key.toLowerCase()] = false;
-  });
-
-  function update() {
-    // Player paddle movement (W and S keys)
-    if (keys['w']) {
-      playerPaddlePos -= paddleSpeed;
-      if (playerPaddlePos < 0) playerPaddlePos = 0;
-    }
-    if (keys['s']) {
-      playerPaddlePos += paddleSpeed;
-      if (playerPaddlePos > gameHeight - paddleHeight) playerPaddlePos = gameHeight - paddleHeight;
-    }
-    playerPaddle.style.top = playerPaddlePos + 'px';
-
-    // AI paddle movement - fast speed (1.6x)
-    const aiCenter = aiPaddlePos + paddleHeight / 2;
-    const ballCenter = ballPos.y + ballHeight / 2;
-
-    if (aiCenter < ballCenter - 10) {
-      aiPaddlePos += paddleSpeed * 1.6;
-    } else if (aiCenter > ballCenter + 10) {
-      aiPaddlePos -= paddleSpeed * 1.6;
-    }
-    if (aiPaddlePos < 0) aiPaddlePos = 0;
-    if (aiPaddlePos > gameHeight - paddleHeight) aiPaddlePos = gameHeight - paddleHeight;
-    aiPaddle.style.top = aiPaddlePos + 'px';
-
-    // Move ball
-    ballPos.x += ballSpeed.x;
-    ballPos.y += ballSpeed.y;
-
-    // Ball collision with top/bottom walls
-    if (ballPos.y <= 0 || ballPos.y + ballHeight >= gameHeight) {
-      ballSpeed.y *= -1;
+    function randomColor(exclude) {
+      let filtered = colors.filter(c => c !== exclude);
+      return filtered[Math.floor(Math.random() * filtered.length)];
     }
 
-    // Ball collision with player paddle
-    if (
-      ballPos.x <= 20 + 15 &&
-      ballPos.y + ballHeight >= playerPaddlePos &&
-      ballPos.y <= playerPaddlePos + paddleHeight
-    ) {
-      ballSpeed.x *= -1.1;  // Reverse & speed up
-      ballPos.x = 20 + 15;  // avoid sticking
+    window.addEventListener('keydown', (e) => {
+      keys[e.key.toLowerCase()] = true;
+    });
+    window.addEventListener('keyup', (e) => {
+      keys[e.key.toLowerCase()] = false;
+    });
 
-      // Change color (border)
-      changeBallColor();
+    function update() {
+      // Player paddle movement (W and S keys)
+      if (keys['w']) {
+        playerPaddlePos -= paddleSpeed;
+        if (playerPaddlePos < 0) playerPaddlePos = 0;
+      }
+      if (keys['s']) {
+        playerPaddlePos += paddleSpeed;
+        if (playerPaddlePos > gameHeight - paddleHeight) playerPaddlePos = gameHeight - paddleHeight;
+      }
+      playerPaddle.style.top = playerPaddlePos + 'px';
+
+      // AI paddle movement based on difficulty
+      const aiCenter = aiPaddlePos + paddleHeight / 2;
+      const ballCenter = ballPos.y + ballHeight / 2;
+
+      if (aiCenter < ballCenter - 10) {
+        aiPaddlePos += paddleSpeed * aiSpeedMultiplier;
+      } else if (aiCenter > ballCenter + 10) {
+        aiPaddlePos -= paddleSpeed * aiSpeedMultiplier;
+      }
+      if (aiPaddlePos < 0) aiPaddlePos = 0;
+      if (aiPaddlePos > gameHeight - paddleHeight) aiPaddlePos = gameHeight - paddleHeight;
+      aiPaddle.style.top = aiPaddlePos + 'px';
+
+      // Move ball
+      ballPos.x += ballSpeed.x;
+      ballPos.y += ballSpeed.y;
+
+      // Ball collision with top/bottom walls
+      if (ballPos.y <= 0 || ballPos.y + ballHeight >= gameHeight) {
+        ballSpeed.y *= -1;
+      }
+
+      // Ball collision with player paddle
+      if (
+        ballPos.x <= 20 + 15 &&
+        ballPos.y + ballHeight >= playerPaddlePos &&
+        ballPos.y <= playerPaddlePos + paddleHeight
+      ) {
+        ballSpeed.x *= -1.1;
+        ballPos.x = 20 + 15;
+        changeBallColor();
+      }
+
+      // Ball collision with AI paddle
+      if (
+        ballPos.x + ballWidth >= gameWidth - 20 - 15 &&
+        ballPos.y + ballHeight >= aiPaddlePos &&
+        ballPos.y <= aiPaddlePos + paddleHeight
+      ) {
+        ballSpeed.x *= -1.1;
+        ballPos.x = gameWidth - 20 - 15 - ballWidth;
+        changeBallColor();
+      }
+
+      // Score points
+      if (ballPos.x < 0) {
+        aiScore++;
+        resetBall();
+      } else if (ballPos.x + ballWidth > gameWidth) {
+        playerScore++;
+        resetBall();
+      }
+
+      ball.style.left = ballPos.x + 'px';
+      ball.style.top = ballPos.y + 'px';
+
+      playerScoreEl.textContent = playerScore;
+      aiScoreEl.textContent = aiScore;
+
+      requestAnimationFrame(update);
     }
 
-    // Ball collision with AI paddle
-    if (
-      ballPos.x + ballWidth >= gameWidth - 20 - 15 &&
-      ballPos.y + ballHeight >= aiPaddlePos &&
-      ballPos.y <= aiPaddlePos + paddleHeight
-    ) {
-      ballSpeed.x *= -1.1;  // Reverse & speed up
-      ballPos.x = gameWidth - 20 - 15 - ballWidth; // avoid sticking
-
-      // Change color (border)
-      changeBallColor();
+    function changeBallColor() {
+      let currentColor = ball.style.borderColor;
+      let newColor = randomColor(currentColor);
+      ball.style.borderColor = newColor;
     }
 
-    // Score points
-    if (ballPos.x < 0) {
-      aiScore++;
+    function resetBall() {
+      ballPos = { x: gameWidth / 2 - ballWidth / 2, y: gameHeight / 2 - ballHeight / 2 };
+      ballSpeed.x = (Math.random() > 0.5 ? 1 : -1) * ballInitialSpeed;
+      ballSpeed.y = (Math.random() * ballInitialSpeed - ballInitialSpeed / 2);
+      ball.style.borderColor = 'white';
+    }
+
+    function startGame(difficulty) {
+      difficultySelection.style.display = 'none';
+      game.style.display = 'block';
+
+      playerScore = 0;
+      aiScore = 0;
+
+      if(difficulty === 'easy') {
+        aiSpeedMultiplier = 1.0;
+        ballInitialSpeed = 3;
+      } else if(difficulty === 'medium') {
+        aiSpeedMultiplier = 1.6;
+        ballInitialSpeed = 4;
+      } else if(difficulty === 'hard') {
+        aiSpeedMultiplier = 2.2;
+        ballInitialSpeed = 5;
+      }
+
       resetBall();
-    } else if (ballPos.x + ballWidth > gameWidth) {
-      playerScore++;
-      resetBall();
+      update();
     }
 
-    ball.style.left = ballPos.x + 'px';
-    ball.style.top = ballPos.y + 'px';
-
-    playerScoreEl.textContent = playerScore;
-    aiScoreEl.textContent = aiScore;
-
-    requestAnimationFrame(update);
-  }
-
-  function changeBallColor() {
-    let currentColor = ball.style.borderColor;
-    let newColor = randomColor(currentColor);
-    ball.style.borderColor = newColor;
-  }
-
-  function resetBall() {
-    ballPos = { x: gameWidth / 2 - ballWidth / 2, y: gameHeight / 2 - ballHeight / 2 };
-    ballSpeed.x = (Math.random() > 0.5 ? 1 : -1) * 4;
-    ballSpeed.y = (Math.random() * 4 - 2);
-    ball.style.borderColor = 'white';
-  }
-
-  resetBall();
-  update();
-</script>
+    document.querySelectorAll('.diff-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        startGame(btn.getAttribute('data-difficulty'));
+      });
+    });
+  </script>
 </body>
 </html>
