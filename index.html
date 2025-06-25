@@ -1,27 +1,44 @@
-<!DOCTYPE html>
-<html lang="en" >
+ <!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Pong Game - DVD Logo Ball with Difficulty</title>
+  <title>Pong Game - DVD Logo</title>
   <style>
-    body, html {
-      margin: 0; padding: 0; height: 100%;
+    html, body {
+      margin: 0;
+      height: 100%;
       background: black;
+      font-family: sans-serif;
       display: flex;
-      justify-content: center;
       align-items: center;
-      font-family: Arial, sans-serif;
-      user-select: none;
+      justify-content: center;
+    }
+    #difficultySelection {
+      color: white;
+      text-align: center;
+    }
+    .diff-btn {
+      background: #3498db;
+      color: white;
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .diff-btn:hover {
+      background: #2980b9;
     }
     #game {
+      display: none;
       position: relative;
       width: 800px;
       height: 500px;
-      background: #222;
-      overflow: hidden;
+      background: #111;
       border: 2px solid white;
-      display: none;
+      overflow: hidden;
     }
     .paddle {
       position: absolute;
@@ -38,14 +55,13 @@
       height: 40px;
       border: 3px solid white;
       border-radius: 6px;
+      overflow: hidden;
       box-sizing: border-box;
-      transition: border-color 0.3s ease;
     }
     #ball img {
       width: 100%;
       height: 100%;
       display: block;
-      border-radius: 6px;
       pointer-events: none;
     }
     #scoreBoard {
@@ -55,27 +71,6 @@
       transform: translateX(-50%);
       color: white;
       font-size: 30px;
-    }
-    #difficultySelection {
-      color: white;
-      text-align: center;
-    }
-    #difficultySelection h2 {
-      margin-bottom: 20px;
-    }
-    .diff-btn {
-      background: #2980b9;
-      border: none;
-      color: white;
-      padding: 12px 25px;
-      margin: 0 10px;
-      font-size: 18px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
-    .diff-btn:hover {
-      background: #3498db;
     }
   </style>
 </head>
@@ -91,7 +86,7 @@
     <div id="playerPaddle" class="paddle"></div>
     <div id="aiPaddle" class="paddle"></div>
     <div id="ball">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/DVD_logo.svg/1200px-DVD_logo.svg.png" alt="DVD Logo" />
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/DVD_logo.svg/1200px-DVD_logo.svg.png" alt="DVD" />
     </div>
     <div id="scoreBoard"><span id="playerScore">0</span> : <span id="aiScore">0</span></div>
   </div>
@@ -105,47 +100,53 @@
     const playerScoreEl = document.getElementById('playerScore');
     const aiScoreEl = document.getElementById('aiScore');
 
-    const gameHeight = 500; // fixed for convenience
+    const gameHeight = 500;
     const gameWidth = 800;
-
-    let playerScore = 0;
-    let aiScore = 0;
 
     const paddleHeight = 100;
     const ballWidth = 60;
     const ballHeight = 40;
 
-    let ballPos = { x: gameWidth / 2 - ballWidth / 2, y: gameHeight / 2 - ballHeight / 2 };
+    let ballPos = { x: 0, y: 0 };
     let ballSpeed = { x: 4, y: 4 };
 
     let playerPaddlePos = gameHeight / 2 - paddleHeight / 2;
     let aiPaddlePos = gameHeight / 2 - paddleHeight / 2;
 
-    const paddleSpeed = 8;
-    let aiSpeedMultiplier = 1.6;
+    let paddleSpeed = 8;
+    let aiSpeedMultiplier = 1.5;
     let ballInitialSpeed = 4;
 
+    let playerScore = 0;
+    let aiScore = 0;
+
     const keys = {};
+    const colors = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6'];
 
-    const colors = [
-      '#e74c3c', '#27ae60', '#f39c12', '#2980b9',
-      '#8e44ad', '#1abc9c', '#c0392b', '#d35400'
-    ];
+    window.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
+    window.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
 
-    function randomColor(exclude) {
-      let filtered = colors.filter(c => c !== exclude);
-      return filtered[Math.floor(Math.random() * filtered.length)];
+    function resetBall() {
+      ballPos = {
+        x: gameWidth / 2 - ballWidth / 2,
+        y: gameHeight / 2 - ballHeight / 2
+      };
+      const direction = Math.random() > 0.5 ? 1 : -1;
+      ballSpeed.x = direction * ballInitialSpeed;
+      ballSpeed.y = (Math.random() - 0.5) * ballInitialSpeed;
+      ball.style.borderColor = 'white';
     }
 
-    window.addEventListener('keydown', (e) => {
-      keys[e.key.toLowerCase()] = true;
-    });
-    window.addEventListener('keyup', (e) => {
-      keys[e.key.toLowerCase()] = false;
-    });
+    function changeBallColor() {
+      const currentColor = ball.style.borderColor;
+      let newColor;
+      do {
+        newColor = colors[Math.floor(Math.random() * colors.length)];
+      } while (newColor === currentColor);
+      ball.style.borderColor = newColor;
+    }
 
     function update() {
-      // Player paddle movement (W and S keys)
       if (keys['w']) {
         playerPaddlePos -= paddleSpeed;
         if (playerPaddlePos < 0) playerPaddlePos = 0;
@@ -156,15 +157,11 @@
       }
       playerPaddle.style.top = playerPaddlePos + 'px';
 
-      // AI paddle movement based on difficulty
+      // AI movement
       const aiCenter = aiPaddlePos + paddleHeight / 2;
       const ballCenter = ballPos.y + ballHeight / 2;
-
-      if (aiCenter < ballCenter - 10) {
-        aiPaddlePos += paddleSpeed * aiSpeedMultiplier;
-      } else if (aiCenter > ballCenter + 10) {
-        aiPaddlePos -= paddleSpeed * aiSpeedMultiplier;
-      }
+      if (aiCenter < ballCenter - 10) aiPaddlePos += paddleSpeed * aiSpeedMultiplier;
+      if (aiCenter > ballCenter + 10) aiPaddlePos -= paddleSpeed * aiSpeedMultiplier;
       if (aiPaddlePos < 0) aiPaddlePos = 0;
       if (aiPaddlePos > gameHeight - paddleHeight) aiPaddlePos = gameHeight - paddleHeight;
       aiPaddle.style.top = aiPaddlePos + 'px';
@@ -173,34 +170,34 @@
       ballPos.x += ballSpeed.x;
       ballPos.y += ballSpeed.y;
 
-      // Ball collision with top/bottom walls
+      // Wall bounce
       if (ballPos.y <= 0 || ballPos.y + ballHeight >= gameHeight) {
         ballSpeed.y *= -1;
       }
 
-      // Ball collision with player paddle
+      // Paddle collision - player
       if (
-        ballPos.x <= 20 + 15 &&
+        ballPos.x <= 35 &&
         ballPos.y + ballHeight >= playerPaddlePos &&
         ballPos.y <= playerPaddlePos + paddleHeight
       ) {
         ballSpeed.x *= -1.1;
-        ballPos.x = 20 + 15;
+        ballPos.x = 35;
         changeBallColor();
       }
 
-      // Ball collision with AI paddle
+      // Paddle collision - AI
       if (
-        ballPos.x + ballWidth >= gameWidth - 20 - 15 &&
+        ballPos.x + ballWidth >= gameWidth - 35 &&
         ballPos.y + ballHeight >= aiPaddlePos &&
         ballPos.y <= aiPaddlePos + paddleHeight
       ) {
         ballSpeed.x *= -1.1;
-        ballPos.x = gameWidth - 20 - 15 - ballWidth;
+        ballPos.x = gameWidth - 35 - ballWidth;
         changeBallColor();
       }
 
-      // Score points
+      // Score
       if (ballPos.x < 0) {
         aiScore++;
         resetBall();
@@ -209,42 +206,27 @@
         resetBall();
       }
 
+      // Update DOM
       ball.style.left = ballPos.x + 'px';
       ball.style.top = ballPos.y + 'px';
-
       playerScoreEl.textContent = playerScore;
       aiScoreEl.textContent = aiScore;
 
       requestAnimationFrame(update);
     }
 
-    function changeBallColor() {
-      let currentColor = ball.style.borderColor;
-      let newColor = randomColor(currentColor);
-      ball.style.borderColor = newColor;
-    }
-
-    function resetBall() {
-      ballPos = { x: gameWidth / 2 - ballWidth / 2, y: gameHeight / 2 - ballHeight / 2 };
-      ballSpeed.x = (Math.random() > 0.5 ? 1 : -1) * ballInitialSpeed;
-      ballSpeed.y = (Math.random() * ballInitialSpeed - ballInitialSpeed / 2);
-      ball.style.borderColor = 'white';
-    }
-
     function startGame(difficulty) {
       difficultySelection.style.display = 'none';
       game.style.display = 'block';
 
-      playerScore = 0;
-      aiScore = 0;
-
-      if(difficulty === 'easy') {
+      // Difficulty settings
+      if (difficulty === 'easy') {
         aiSpeedMultiplier = 1.0;
         ballInitialSpeed = 3;
-      } else if(difficulty === 'medium') {
-        aiSpeedMultiplier = 1.6;
+      } else if (difficulty === 'medium') {
+        aiSpeedMultiplier = 1.5;
         ballInitialSpeed = 4;
-      } else if(difficulty === 'hard') {
+      } else if (difficulty === 'hard') {
         aiSpeedMultiplier = 2.2;
         ballInitialSpeed = 5;
       }
@@ -255,7 +237,8 @@
 
     document.querySelectorAll('.diff-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        startGame(btn.getAttribute('data-difficulty'));
+        const diff = btn.getAttribute('data-difficulty');
+        startGame(diff);
       });
     });
   </script>
