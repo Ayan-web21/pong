@@ -1,137 +1,223 @@
-  <!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>DVD Pong</title>
-  <style>
-    body {
-      background: #000;
-      margin: 0;
-      overflow: hidden;
-      font-family: sans-serif;
-      color: white;
-      text-align: center;
-    }
-
-    canvas {
-      display: block;
-      margin: 20px auto;
-      border: 2px solid white;
-    }
-
-    select {
-      margin-top: 10px;
-      padding: 5px 10px;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pong Game - DVD Logo Ball</title>
+<style>
+  body, html {
+    margin: 0; padding: 0; height: 100%;
+    background: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: Arial, sans-serif;
+  }
+  #game {
+    position: relative;
+    width: 800px;
+    height: 500px;
+    background: #222;
+    overflow: hidden;
+    border: 2px solid white;
+  }
+  .paddle {
+    position: absolute;
+    width: 15px;
+    height: 100px;
+    background: white;
+    border-radius: 10px;
+  }
+  #playerPaddle { left: 20px; }
+  #aiPaddle { right: 20px; }
+  #ball {
+    position: absolute;
+    width: 60px;
+    height: 40px;
+    background: linear-gradient(90deg, #00008B 0%, #1E90FF 100%);
+    border: 3px solid white;
+    border-radius: 6px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-weight: bold;
+    font-family: 'Arial Black', Arial, sans-serif;
+    user-select: none;
+    cursor: default;
+    box-sizing: border-box;
+    /* Add a subtle shadow */
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+  }
+  #ball span {
+    font-size: 24px;
+  }
+  #scoreBoard {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    font-size: 30px;
+    user-select: none;
+  }
+</style>
 </head>
 <body>
-  <h1>DVD Pong</h1>
-  <select id="difficulty">
-    <option value="easy">Easy</option>
-    <option value="medium" selected>Medium</option>
-    <option value="hard">Hard</option>
-  </select>
-  <canvas id="gameCanvas" width="640" height="480"></canvas>
+<div id="game">
+  <div id="playerPaddle" class="paddle"></div>
+  <div id="aiPaddle" class="paddle"></div>
+  <div id="ball"><span>DVD</span></div>
+  <div id="scoreBoard"><span id="playerScore">0</span> : <span id="aiScore">0</span></div>
+</div>
 
-  <script>
-    const canvas = document.getElementById("gameCanvas");
-    const ctx = canvas.getContext("2d");
+<script>
+  const game = document.getElementById('game');
+  const playerPaddle = document.getElementById('playerPaddle');
+  const aiPaddle = document.getElementById('aiPaddle');
+  const ball = document.getElementById('ball');
+  const playerScoreEl = document.getElementById('playerScore');
+  const aiScoreEl = document.getElementById('aiScore');
 
-    const paddleWidth = 10, paddleHeight = 100;
-    let playerY = canvas.height / 2 - paddleHeight / 2;
-    let aiY = playerY;
+  const gameHeight = game.clientHeight;
+  const gameWidth = game.clientWidth;
 
-    const ballSize = 40;
-    let ballX = canvas.width / 2 - ballSize / 2;
-    let ballY = canvas.height / 2 - ballSize / 2;
-    let ballSpeedX = 4;
-    let ballSpeedY = 3;
-    let ballColor = getRandomColor();
+  let playerScore = 0;
+  let aiScore = 0;
 
-    // Use Base64 DVD logo image
-    const dvdImg = new Image();
-    dvdImg.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAMAAAAJbSJIAAAAgVBMVEUAAAD///+fn5/BwcGGhob8/PyLi4vy8vLb29vw8PBJSUmCgoLW1tb19fX6+vpra2uysrJPT0/Ly8ssLCyTk5Po6Oinp6fi4uJwcHCQkJBjY2O7u7tAQEDR0dHY2NgRERGbm5t7e3sdHR05OTkmJiYfHx9cXFxGRkYVFRUrKyt2dna4eqXzAAAH70lEQVR4nO2c63qiMBCGFQEFRA4iqHiAotR6/xe4HtZWzTcQIHbbfeb91UdIhgnJnBLa6zEMwzAMwzAMwzAMwzAMwzAMwzAMwzAMwzAMwzAMwzAMwzAMwzAMwzAMwzDMf8Yh09QQT+uFBbF0d9nCmZcSXUoI7asiqpV1GDbs0rA2vrPrqKGuTMOkVlbSrmMr9bYdNBwo07BfN9gdRFl+0FrDluOKWFRL0rr1HrbUcapGuQujSknHzv2HRRsN5wo0+6TK9CmxaFkLDX0Vgm9UTNODq0TCuLn/ULgM+/0NLWekSMTQbqqhIsFXDHKhKLTYDQ3OUp3kMyYhpqMZfWDy3kjDwNQxiyhON1alqLW4hsdYigdaG1kULU6YV74km5Hmj2cVcmdvzd5iJdPjwCAlJYX4G3T64L5+f14teb/0yRBvoFDDMw45nivRfKBpukdTgZrP93hjQrCnWMXeghCUiTEtsqboOX05yR5eJzP5ZxeXobkEt9lYUAgssRgip7DlVDQARyB5u4aS0UNiQrExzIE+oL+egdcjNM9Bw1N4l4m/4uUFVZRfiWCJYY+KY66egx6+tqF1gGPrQMkwpxzKKrgCbQ/4VuiypzvR0j46/R2a3+dbwKQgohWYwMq6fRDuEx4Nv0QbzKFHI7kBrcrT7x/iz+R7Qf6qxtd8AsJujboXvYyylwu/bWoE9PPzBfBiQkoymj4yzuYMCIdJV4Ns/rK3F2bbfWwq6n9LgICBJcs8KOQjX8QjW7HlhMxOgGk4zzdxgL8Mhg3mV3q9BEwcubTQQszkNCzFlrQvRRraaCl/zTYwsdfXKzvQGSnZBDdjuysQiy3pWAMleB89ZAcqxuRWjmtg4uBjyrp84EzJsdlPxJut8wVxRf1dypHYYHhbA+Ch4yaPSS+mR8AyIVNYlEiG+MJ1HoAl0P/M7MCEoN8K6Ki65vUJcHEueTMy2VenJMQcl072IBT5tNM74O/3lOQcSK4vr18AKQMd7wEx1jXKFn3e+VWBqfXlw8D7pd8KMgCShX7wWsixQa5box53AUfvbqGBsJs0cag+QAYHTwBjThWybCBmckuUBN8Wojrz/VMBK4tSJ9z7iZWcgu/goYlbt0iMfrsqGEYL1Cgftm3EsTWoh0brXzJ97uViU8onoYjta+EIFssVZ+FD9QjUbahIA/lCS7YSBZYW4ZNQgnAfflYVxq5MHl4RCMMIE4cUlK/SgGo3bGtDBe7XTX01tHzoEYTdMFfYokixIjR4Yir6exQpbOEw9rOHruoUfDIjwMShsDsHYZS8HYVBiriJu41w0fJpHGs2P7LHuw/iHcDE5bjTtbSCaIqnT7cEKbFh9DxRgH+r6BaE3c/PXWjE2m6gILKP+dfVbeFQ6oG4oHKaCg8Fxja77+zok6arUbUbtM8cx9HNKE7Xo4rdPgPYI6o43Ud+AEy/+CJ5Efvhpuq4hmRmfwX4ezkS5JtRknrFFazXGzQgErjNivkge5MC2+qC3L8RjWTbDb2QqHNSQFdTS0IFrrj4Dj1stVmiGOZiT9U0PZ10xtLJ7sTi9wXUgBqMKoy48ZEhUO2uw40qpICyXR9P6W31tivEb3G+jRhzGqvmOBCa9dC2o0SsEiNuteeLtrwqhIS1Zgy4cXwyo+E5upFk3VCgySGTsSkzSQRrauFJ3eRURqI1Pltyo5D1ScNBLrkGnp+cOnlSn2pdmYSLVoe8/iJx1suw1vGxwdHOZzdX4ttQtftZsrvx9S7anckHNKmvRY5nN/SvzzaScl9BWCU5jvR50PXE7Mt4MF7Zv36aV3A/TZ8Tpv+Er2kqn4f/Lj5LW/UHvn8pt6qi+2NNRWf+TlPJivRv5FqeUH7o7AdxSVhkT0n8TpIG9drfSab86OdPY9WknPnj2e6KlR2U5dKbH3NH1807dCfPj96yLIPgvZiqPLT8MvZF4OVmFvtpuB4ls2HTgqDhWrNkE15ia+dYvk+7fKmlil0RLPMoHoSjmZqPQZ50tpJ16Gv6/KRu0zSmG4fV0sn8F6mFmVjJOI3NeaDke8oKpl7kr2cufTb/9aoOR4PYaf8ZXoVuy2yg9OugjgzXvtM4A6coPG3dooD5DRhJqgcd1Zw6adJ2l+SbsNYZUe+RUC8b/cMV1wQ3bRHL702Vy86YnL3d6MzJVboT9SNnpM3Mz1usaG66s1DTvaB4DFp2q3JunqyyWkU38h+R9Lw2204iiVZ+VMop5qlSGyYd1KOTcC3EyVVslypXA32K+BElsQp5zk6g2RZQNZKbNErWoLSCSj9SzeREtt3Af0D2dGDvTdUXzn106IFAyTe5w0hG3LvKb+Et+c2aoM1OushG81Z0mre3Kw7+tMBtVgAqK77ubYJhnZKByPHOmfzu7bD/KAq7nOun7CtR45JuzCLyoDvFm6PmRd5hGC8KA9v/X5O5rzjueAHuOutWQi/m8fhnJk+nOTEbmKWSes7BzuO1SqPQnclosFh23ed+Zms7cTj75+nicJNGy5fWa6blMYrDxPq+OtSZyXA2Tk9pSoX3Ua+pvcwXcRqOEutl79WdjdYDP3Pmz/nXN7PdTd+D5XGh+YNw3E1fY3jR6eRB56VdfPzgWvjbR2EHy3mum4so0+IT/oX0wvXv04+alkWm7hy9MlhN9z+hys0wDMMwDMMwDMMwDMMwDMMwDMMwDMMwDMMwDMMwDMMwDMMwDMMwDMMwDMMwzLfxBxfLfKx2SN84AAAAAElFTkSuQmCC";
+  const paddleHeight = playerPaddle.clientHeight;
+  const ballWidth = ball.clientWidth;
+  const ballHeight = ball.clientHeight;
 
-    let difficulty = "medium";
-    let aiSpeed = 4;
+  let ballPos = { x: gameWidth / 2 - ballWidth / 2, y: gameHeight / 2 - ballHeight / 2 };
+  let ballSpeed = { x: 4, y: 4 };
 
-    document.getElementById("difficulty").addEventListener("change", function () {
-      difficulty = this.value;
-      aiSpeed = difficulty === "easy" ? 2 : difficulty === "hard" ? 6 : 4;
-    });
+  let playerPaddlePos = gameHeight / 2 - paddleHeight / 2;
+  let aiPaddlePos = gameHeight / 2 - paddleHeight / 2;
 
-    document.addEventListener("mousemove", (e) => {
-      const rect = canvas.getBoundingClientRect();
-      playerY = e.clientY - rect.top - paddleHeight / 2;
-    });
+  const paddleSpeed = 8;
 
-    function resetBall() {
-      ballX = canvas.width / 2 - ballSize / 2;
-      ballY = canvas.height / 2 - ballSize / 2;
-      ballSpeedX = 4 * (Math.random() > 0.5 ? 1 : -1);
-      ballSpeedY = 3 * (Math.random() > 0.5 ? 1 : -1);
+  const keys = {};
+
+  // Colors for DVD logo background (nice bright palette)
+  const colors = [
+    '#e74c3c', // red
+    '#27ae60', // green
+    '#f39c12', // orange
+    '#2980b9', // blue
+    '#8e44ad', // purple
+    '#1abc9c', // turquoise
+    '#c0392b', // dark red
+    '#d35400', // dark orange
+  ];
+
+  function randomColor(exclude) {
+    let filtered = colors.filter(c => c !== exclude);
+    return filtered[Math.floor(Math.random() * filtered.length)];
+  }
+
+  window.addEventListener('keydown', (e) => {
+    keys[e.key.toLowerCase()] = true;
+  });
+  window.addEventListener('keyup', (e) => {
+    keys[e.key.toLowerCase()] = false;
+  });
+
+  function update() {
+    // Player paddle movement (W and S keys)
+    if (keys['w']) {
+      playerPaddlePos -= paddleSpeed;
+      if (playerPaddlePos < 0) playerPaddlePos = 0;
+    }
+    if (keys['s']) {
+      playerPaddlePos += paddleSpeed;
+      if (playerPaddlePos > gameHeight - paddleHeight) playerPaddlePos = gameHeight - paddleHeight;
+    }
+    playerPaddle.style.top = playerPaddlePos + 'px';
+
+    // AI paddle movement - fast speed (1.6x)
+    const aiCenter = aiPaddlePos + paddleHeight / 2;
+    const ballCenter = ballPos.y + ballHeight / 2;
+
+    if (aiCenter < ballCenter - 10) {
+      aiPaddlePos += paddleSpeed * 1.6;
+    } else if (aiCenter > ballCenter + 10) {
+      aiPaddlePos -= paddleSpeed * 1.6;
+    }
+    if (aiPaddlePos < 0) aiPaddlePos = 0;
+    if (aiPaddlePos > gameHeight - paddleHeight) aiPaddlePos = gameHeight - paddleHeight;
+    aiPaddle.style.top = aiPaddlePos + 'px';
+
+    // Move ball
+    ballPos.x += ballSpeed.x;
+    ballPos.y += ballSpeed.y;
+
+    // Ball collision with top/bottom walls
+    if (ballPos.y <= 0 || ballPos.y + ballHeight >= gameHeight) {
+      ballSpeed.y *= -1;
     }
 
-    function getRandomColor() {
-      return "#" + Math.floor(Math.random() * 16777215).toString(16);
+    // Ball collision with player paddle
+    if (
+      ballPos.x <= 20 + 15 &&
+      ballPos.y + ballHeight >= playerPaddlePos &&
+      ballPos.y <= playerPaddlePos + paddleHeight
+    ) {
+      ballSpeed.x *= -1.1;  // Reverse & speed up
+      ballPos.x = 20 + 15;  // avoid sticking
+
+      // Change color
+      changeBallColor();
     }
 
-    function draw() {
-      ctx.fillStyle = "black";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Ball collision with AI paddle
+    if (
+      ballPos.x + ballWidth >= gameWidth - 20 - 15 &&
+      ballPos.y + ballHeight >= aiPaddlePos &&
+      ballPos.y <= aiPaddlePos + paddleHeight
+    ) {
+      ballSpeed.x *= -1.1;  // Reverse & speed up
+      ballPos.x = gameWidth - 20 - 15 - ballWidth; // avoid sticking
 
-      ctx.fillStyle = "white";
-      ctx.fillRect(0, playerY, paddleWidth, paddleHeight);
-      ctx.fillRect(canvas.width - paddleWidth, aiY, paddleWidth, paddleHeight);
-
-      ctx.drawImage(dvdImg, ballX, ballY, ballSize, ballSize);
+      // Change color
+      changeBallColor();
     }
 
-    function update() {
-      ballX += ballSpeedX;
-      ballY += ballSpeedY;
-
-      if (ballY <= 0 || ballY + ballSize >= canvas.height) {
-        ballSpeedY *= -1;
-      }
-
-      if (
-        ballX <= paddleWidth &&
-        ballY + ballSize >= playerY &&
-        ballY <= playerY + paddleHeight
-      ) {
-        ballSpeedX *= -1.1;
-        ballColor = getRandomColor();
-      }
-
-      if (
-        ballX + ballSize >= canvas.width - paddleWidth &&
-        ballY + ballSize >= aiY &&
-        ballY <= aiY + paddleHeight
-      ) {
-        ballSpeedX *= -1.1;
-        ballColor = getRandomColor();
-      }
-
-      if (ballX < 0 || ballX + ballSize > canvas.width) {
-        resetBall();
-      }
-
-      const aiCenter = aiY + paddleHeight / 2;
-      if (aiCenter < ballY) aiY += aiSpeed;
-      else if (aiCenter > ballY + ballSize) aiY -= aiSpeed;
-
-      aiY = Math.max(0, Math.min(canvas.height - paddleHeight, aiY));
+    // Score points
+    if (ballPos.x < 0) {
+      aiScore++;
+      resetBall();
+    } else if (ballPos.x + ballWidth > gameWidth) {
+      playerScore++;
+      resetBall();
     }
 
-    function loop() {
-      update();
-      draw();
-      requestAnimationFrame(loop);
-    }
+    ball.style.left = ballPos.x + 'px';
+    ball.style.top = ballPos.y + 'px';
 
-    loop();
-  </script>
+    playerScoreEl.textContent = playerScore;
+    aiScoreEl.textContent = aiScore;
+
+    requestAnimationFrame(update);
+  }
+
+  function changeBallColor() {
+    let currentColor = ball.style.background;
+    let newColor = randomColor(currentColor);
+    // Apply gradient with the new color and a lighter tone
+    ball.style.background = `linear-gradient(90deg, ${newColor} 0%, #FFFFFF 100%)`;
+  }
+
+  function resetBall() {
+    ballPos = { x: gameWidth / 2 - ballWidth / 2, y: gameHeight / 2 - ballHeight / 2 };
+    ballSpeed.x = (Math.random() > 0.5 ? 1 : -1) * 4;
+    ballSpeed.y = (Math.random() * 4 - 2);
+    // Reset to initial blue-ish gradient
+    ball.style.background = 'linear-gradient(90deg, #00008B 0%, #1E90FF 100%)';
+  }
+
+  resetBall();
+  update();
+</script>
 </body>
 </html>
