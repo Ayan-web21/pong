@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Pong Game - DVD Logo Image Ball</title>
+<title>Pong Game - DVD Logo Ball</title>
 <style>
   body, html {
     margin: 0; padding: 0; height: 100%;
@@ -34,19 +34,23 @@
     position: absolute;
     width: 60px;
     height: 40px;
+    background: linear-gradient(90deg, #00008B 0%, #1E90FF 100%);
     border: 3px solid white;
     border-radius: 6px;
-    box-sizing: border-box;
-    /* color tint by border color */
-    transition: border-color 0.3s ease;
-  }
-  #ball img {
-    width: 100%;
-    height: 100%;
-    display: block;
-    border-radius: 6px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-weight: bold;
+    font-family: 'Arial Black', Arial, sans-serif;
     user-select: none;
-    pointer-events: none;
+    cursor: default;
+    box-sizing: border-box;
+    /* Add a subtle shadow */
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+  }
+  #ball span {
+    font-size: 24px;
   }
   #scoreBoard {
     position: absolute;
@@ -63,9 +67,7 @@
 <div id="game">
   <div id="playerPaddle" class="paddle"></div>
   <div id="aiPaddle" class="paddle"></div>
-  <div id="ball">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/DVD_logo.svg/1200px-DVD_logo.svg.png" alt="DVD Logo" />
-  </div>
+  <div id="ball"><span>DVD</span></div>
   <div id="scoreBoard"><span id="playerScore">0</span> : <span id="aiScore">0</span></div>
 </div>
 
@@ -97,7 +99,7 @@
 
   const keys = {};
 
-  // Colors for border on paddle hit (bright colors)
+  // Colors for DVD logo background (nice bright palette)
   const colors = [
     '#e74c3c', // red
     '#27ae60', // green
@@ -164,7 +166,7 @@
       ballSpeed.x *= -1.1;  // Reverse & speed up
       ballPos.x = 20 + 15;  // avoid sticking
 
-      // Change color (border)
+      // Change color
       changeBallColor();
     }
 
@@ -177,7 +179,7 @@
       ballSpeed.x *= -1.1;  // Reverse & speed up
       ballPos.x = gameWidth - 20 - 15 - ballWidth; // avoid sticking
 
-      // Change color (border)
+      // Change color
       changeBallColor();
     }
 
@@ -200,16 +202,18 @@
   }
 
   function changeBallColor() {
-    let currentColor = ball.style.borderColor;
+    let currentColor = ball.style.background;
     let newColor = randomColor(currentColor);
-    ball.style.borderColor = newColor;
+    // Apply gradient with the new color and a lighter tone
+    ball.style.background = `linear-gradient(90deg, ${newColor} 0%, #FFFFFF 100%)`;
   }
 
   function resetBall() {
     ballPos = { x: gameWidth / 2 - ballWidth / 2, y: gameHeight / 2 - ballHeight / 2 };
     ballSpeed.x = (Math.random() > 0.5 ? 1 : -1) * 4;
     ballSpeed.y = (Math.random() * 4 - 2);
-    ball.style.borderColor = 'white';
+    // Reset to initial blue-ish gradient
+    ball.style.background = 'linear-gradient(90deg, #00008B 0%, #1E90FF 100%)';
   }
 
   resetBall();
