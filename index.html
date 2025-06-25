@@ -1,122 +1,219 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Pong with Mobile Controls</title>
-  <style>
-    body {
-      background: black;
-      color: white;
-      text-align: center;
-      font-family: Arial, sans-serif;
-      user-select: none; /* Disable text selection */
-    }
-    canvas {
-      background: black;
-      display: block;
-      margin: 20px auto;
-      border: 2px solid white;
-    }
-    .controls {
-      margin-top: 10px;
-    }
-    button {
-      background: white;
-      border: none;
-      color: black;
-      font-size: 24px;
-      padding: 15px 30px;
-      margin: 0 20px;
-      border-radius: 8px;
-      user-select: none;
-      touch-action: manipulation;
-    }
-    button:active {
-      background: #ddd;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pong Game - DVD Logo Image Ball</title>
+<style>
+  body, html {
+    margin: 0; padding: 0; height: 100%;
+    background: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: Arial, sans-serif;
+  }
+  #game {
+    position: relative;
+    width: 800px;
+    height: 500px;
+    background: #222;
+    overflow: hidden;
+    border: 2px solid white;
+  }
+  .paddle {
+    position: absolute;
+    width: 15px;
+    height: 100px;
+    background: white;
+    border-radius: 10px;
+  }
+  #playerPaddle { left: 20px; }
+  #aiPaddle { right: 20px; }
+  #ball {
+    position: absolute;
+    width: 60px;
+    height: 40px;
+    border: 3px solid white;
+    border-radius: 6px;
+    box-sizing: border-box;
+    /* color tint by border color */
+    transition: border-color 0.3s ease;
+  }
+  #ball img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    border-radius: 6px;
+    user-select: none;
+    pointer-events: none;
+  }
+  #scoreBoard {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    font-size: 30px;
+    user-select: none;
+  }
+</style>
 </head>
 <body>
-  <canvas id="pong" width="600" height="400"></canvas>
-
-  <div class="controls">
-    <button id="upBtn">⬆️ Up</button>
-    <button id="downBtn">⬇️ Down</button>
+<div id="game">
+  <div id="playerPaddle" class="paddle"></div>
+  <div id="aiPaddle" class="paddle"></div>
+  <div id="ball">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/DVD_logo.svg/1200px-DVD_logo.svg.png" alt="DVD Logo" />
   </div>
+  <div id="scoreBoard"><span id="playerScore">0</span> : <span id="aiScore">0</span></div>
+</div>
 
-  <script>
-    const canvas = document.getElementById('pong');
-    const ctx = canvas.getContext('2d');
+<script>
+  const game = document.getElementById('game');
+  const playerPaddle = document.getElementById('playerPaddle');
+  const aiPaddle = document.getElementById('aiPaddle');
+  const ball = document.getElementById('ball');
+  const playerScoreEl = document.getElementById('playerScore');
+  const aiScoreEl = document.getElementById('aiScore');
 
-    const paddleWidth = 10;
-    const paddleHeight = 80;
-    let leftPaddleY = (canvas.height - paddleHeight) / 2;
-    const rightPaddleY = (canvas.height - paddleHeight) / 2;
+  const gameHeight = game.clientHeight;
+  const gameWidth = game.clientWidth;
 
-    const paddleSpeed = 5;
+  let playerScore = 0;
+  let aiScore = 0;
 
-    // Touch button pressed states
-    let upPressed = false;
-    let downPressed = false;
+  const paddleHeight = playerPaddle.clientHeight;
+  const ballWidth = ball.clientWidth;
+  const ballHeight = ball.clientHeight;
 
-    // Get buttons
-    const upBtn = document.getElementById('upBtn');
-    const downBtn = document.getElementById('downBtn');
+  let ballPos = { x: gameWidth / 2 - ballWidth / 2, y: gameHeight / 2 - ballHeight / 2 };
+  let ballSpeed = { x: 4, y: 4 };
 
-    // Functions to handle button press and release
-    function pressUp() { upPressed = true; }
-    function releaseUp() { upPressed = false; }
-    function pressDown() { downPressed = true; }
-    function releaseDown() { downPressed = false; }
+  let playerPaddlePos = gameHeight / 2 - paddleHeight / 2;
+  let aiPaddlePos = gameHeight / 2 - paddleHeight / 2;
 
-    // Touch events
-    upBtn.addEventListener('touchstart', e => { e.preventDefault(); pressUp(); });
-    upBtn.addEventListener('touchend', e => { e.preventDefault(); releaseUp(); });
-    downBtn.addEventListener('touchstart', e => { e.preventDefault(); pressDown(); });
-    downBtn.addEventListener('touchend', e => { e.preventDefault(); releaseDown(); });
+  const paddleSpeed = 8;
 
-    // Also support mouse events for desktop
-    upBtn.addEventListener('mousedown', pressUp);
-    upBtn.addEventListener('mouseup', releaseUp);
-    upBtn.addEventListener('mouseleave', releaseUp);
-    downBtn.addEventListener('mousedown', pressDown);
-    downBtn.addEventListener('mouseup', releaseDown);
-    downBtn.addEventListener('mouseleave', releaseDown);
+  const keys = {};
 
-    // Clear canvas
-    function clear() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // Colors for border on paddle hit (bright colors)
+  const colors = [
+    '#e74c3c', // red
+    '#27ae60', // green
+    '#f39c12', // orange
+    '#2980b9', // blue
+    '#8e44ad', // purple
+    '#1abc9c', // turquoise
+    '#c0392b', // dark red
+    '#d35400', // dark orange
+  ];
+
+  function randomColor(exclude) {
+    let filtered = colors.filter(c => c !== exclude);
+    return filtered[Math.floor(Math.random() * filtered.length)];
+  }
+
+  window.addEventListener('keydown', (e) => {
+    keys[e.key.toLowerCase()] = true;
+  });
+  window.addEventListener('keyup', (e) => {
+    keys[e.key.toLowerCase()] = false;
+  });
+
+  function update() {
+    // Player paddle movement (W and S keys)
+    if (keys['w']) {
+      playerPaddlePos -= paddleSpeed;
+      if (playerPaddlePos < 0) playerPaddlePos = 0;
+    }
+    if (keys['s']) {
+      playerPaddlePos += paddleSpeed;
+      if (playerPaddlePos > gameHeight - paddleHeight) playerPaddlePos = gameHeight - paddleHeight;
+    }
+    playerPaddle.style.top = playerPaddlePos + 'px';
+
+    // AI paddle movement - fast speed (1.6x)
+    const aiCenter = aiPaddlePos + paddleHeight / 2;
+    const ballCenter = ballPos.y + ballHeight / 2;
+
+    if (aiCenter < ballCenter - 10) {
+      aiPaddlePos += paddleSpeed * 1.6;
+    } else if (aiCenter > ballCenter + 10) {
+      aiPaddlePos -= paddleSpeed * 1.6;
+    }
+    if (aiPaddlePos < 0) aiPaddlePos = 0;
+    if (aiPaddlePos > gameHeight - paddleHeight) aiPaddlePos = gameHeight - paddleHeight;
+    aiPaddle.style.top = aiPaddlePos + 'px';
+
+    // Move ball
+    ballPos.x += ballSpeed.x;
+    ballPos.y += ballSpeed.y;
+
+    // Ball collision with top/bottom walls
+    if (ballPos.y <= 0 || ballPos.y + ballHeight >= gameHeight) {
+      ballSpeed.y *= -1;
     }
 
-    // Draw paddle function
-    function drawPaddle(x, y) {
-      ctx.fillStyle = 'white';
-      ctx.fillRect(x, y, paddleWidth, paddleHeight);
+    // Ball collision with player paddle
+    if (
+      ballPos.x <= 20 + 15 &&
+      ballPos.y + ballHeight >= playerPaddlePos &&
+      ballPos.y <= playerPaddlePos + paddleHeight
+    ) {
+      ballSpeed.x *= -1.1;  // Reverse & speed up
+      ballPos.x = 20 + 15;  // avoid sticking
+
+      // Change color (border)
+      changeBallColor();
     }
 
-    function gameLoop() {
-      clear();
+    // Ball collision with AI paddle
+    if (
+      ballPos.x + ballWidth >= gameWidth - 20 - 15 &&
+      ballPos.y + ballHeight >= aiPaddlePos &&
+      ballPos.y <= aiPaddlePos + paddleHeight
+    ) {
+      ballSpeed.x *= -1.1;  // Reverse & speed up
+      ballPos.x = gameWidth - 20 - 15 - ballWidth; // avoid sticking
 
-      // Move paddle if pressed
-      if (upPressed) {
-        leftPaddleY -= paddleSpeed;
-      }
-      if (downPressed) {
-        leftPaddleY += paddleSpeed;
-      }
-
-      // Keep paddle inside canvas
-      if (leftPaddleY < 0) leftPaddleY = 0;
-      if (leftPaddleY + paddleHeight > canvas.height) leftPaddleY = canvas.height - paddleHeight;
-
-      // Draw paddles
-      drawPaddle(10, leftPaddleY); // Left paddle
-      drawPaddle(canvas.width - 20, rightPaddleY); // Right paddle static
-
-      requestAnimationFrame(gameLoop);
+      // Change color (border)
+      changeBallColor();
     }
 
-    gameLoop();
-  </script>
+    // Score points
+    if (ballPos.x < 0) {
+      aiScore++;
+      resetBall();
+    } else if (ballPos.x + ballWidth > gameWidth) {
+      playerScore++;
+      resetBall();
+    }
+
+    ball.style.left = ballPos.x + 'px';
+    ball.style.top = ballPos.y + 'px';
+
+    playerScoreEl.textContent = playerScore;
+    aiScoreEl.textContent = aiScore;
+
+    requestAnimationFrame(update);
+  }
+
+  function changeBallColor() {
+    let currentColor = ball.style.borderColor;
+    let newColor = randomColor(currentColor);
+    ball.style.borderColor = newColor;
+  }
+
+  function resetBall() {
+    ballPos = { x: gameWidth / 2 - ballWidth / 2, y: gameHeight / 2 - ballHeight / 2 };
+    ballSpeed.x = (Math.random() > 0.5 ? 1 : -1) * 4;
+    ballSpeed.y = (Math.random() * 4 - 2);
+    ball.style.borderColor = 'white';
+  }
+
+  resetBall();
+  update();
+</script>
 </body>
 </html>
