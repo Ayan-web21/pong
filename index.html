@@ -1,0 +1,178 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pong with AI</title>
+<style>
+  body, html {
+    margin: 0; padding: 0; height: 100%;
+    background: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: Arial, sans-serif;
+  }
+  #game {
+    position: relative;
+    width: 800px;
+    height: 500px;
+    background: #222;
+    overflow: hidden;
+    border: 2px solid white;
+  }
+  .paddle {
+    position: absolute;
+    width: 15px;
+    height: 100px;
+    background: white;
+    top: 200px;
+    border-radius: 10px;
+  }
+  #playerPaddle { left: 20px; }
+  #aiPaddle { right: 20px; }
+  #ball {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    top: 240px;
+    left: 390px;
+  }
+  #scoreBoard {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    font-size: 30px;
+    user-select: none;
+  }
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="playerPaddle" class="paddle"></div>
+  <div id="aiPaddle" class="paddle"></div>
+  <div id="ball"></div>
+  <div id="scoreBoard"><span id="playerScore">0</span> : <span id="aiScore">0</span></div>
+</div>
+
+<script>
+  const game = document.getElementById('game');
+  const playerPaddle = document.getElementById('playerPaddle');
+  const aiPaddle = document.getElementById('aiPaddle');
+  const ball = document.getElementById('ball');
+  const playerScoreEl = document.getElementById('playerScore');
+  const aiScoreEl = document.getElementById('aiScore');
+
+  const gameHeight = game.clientHeight;
+  const gameWidth = game.clientWidth;
+
+  let playerScore = 0;
+  let aiScore = 0;
+
+  const paddleHeight = playerPaddle.clientHeight;
+  const ballSize = ball.clientWidth;
+
+  let ballPos = { x: gameWidth / 2 - ballSize / 2, y: gameHeight / 2 - ballSize / 2 };
+  let ballSpeed = { x: 4, y: 4 };
+
+  let playerPaddlePos = gameHeight / 2 - paddleHeight / 2;
+  let aiPaddlePos = gameHeight / 2 - paddleHeight / 2;
+
+  const paddleSpeed = 8;
+
+  const keys = {};
+
+  window.addEventListener('keydown', (e) => {
+    keys[e.key.toLowerCase()] = true;
+  });
+  window.addEventListener('keyup', (e) => {
+    keys[e.key.toLowerCase()] = false;
+  });
+
+  function update() {
+    // Player paddle movement (W and S keys)
+    if (keys['w']) {
+      playerPaddlePos -= paddleSpeed;
+      if (playerPaddlePos < 0) playerPaddlePos = 0;
+    }
+    if (keys['s']) {
+      playerPaddlePos += paddleSpeed;
+      if (playerPaddlePos > gameHeight - paddleHeight) playerPaddlePos = gameHeight - paddleHeight;
+    }
+    playerPaddle.style.top = playerPaddlePos + 'px';
+
+    // AI paddle movement - simple tracking with some delay
+    const aiCenter = aiPaddlePos + paddleHeight / 2;
+    const ballCenter = ballPos.y + ballSize / 2;
+
+    if (aiCenter < ballCenter - 10) {
+      aiPaddlePos += paddleSpeed * 0.7;
+    } else if (aiCenter > ballCenter + 10) {
+      aiPaddlePos -= paddleSpeed * 0.7;
+    }
+    if (aiPaddlePos < 0) aiPaddlePos = 0;
+    if (aiPaddlePos > gameHeight - paddleHeight) aiPaddlePos = gameHeight - paddleHeight;
+    aiPaddle.style.top = aiPaddlePos + 'px';
+
+    // Move ball
+    ballPos.x += ballSpeed.x;
+    ballPos.y += ballSpeed.y;
+
+    // Ball collision with top/bottom walls
+    if (ballPos.y <= 0 || ballPos.y + ballSize >= gameHeight) {
+      ballSpeed.y *= -1;
+    }
+
+    // Ball collision with player paddle
+    if (
+      ballPos.x <= 20 + 15 &&
+      ballPos.y + ballSize >= playerPaddlePos &&
+      ballPos.y <= playerPaddlePos + paddleHeight
+    ) {
+      ballSpeed.x *= -1;
+      ballPos.x = 20 + 15; // avoid sticking inside paddle
+    }
+
+    // Ball collision with AI paddle
+    if (
+      ballPos.x + ballSize >= gameWidth - 20 - 15 &&
+      ballPos.y + ballSize >= aiPaddlePos &&
+      ballPos.y <= aiPaddlePos + paddleHeight
+    ) {
+      ballSpeed.x *= -1;
+      ballPos.x = gameWidth - 20 - 15 - ballSize; // avoid sticking
+    }
+
+    // Score points
+    if (ballPos.x < 0) {
+      aiScore++;
+      resetBall();
+    } else if (ballPos.x + ballSize > gameWidth) {
+      playerScore++;
+      resetBall();
+    }
+
+    ball.style.left = ballPos.x + 'px';
+    ball.style.top = ballPos.y + 'px';
+
+    playerScoreEl.textContent = playerScore;
+    aiScoreEl.textContent = aiScore;
+
+    requestAnimationFrame(update);
+  }
+
+  function resetBall() {
+    ballPos = { x: gameWidth / 2 - ballSize / 2, y: gameHeight / 2 - ballSize / 2 };
+    ballSpeed.x = (Math.random() > 0.5 ? 1 : -1) * 4;
+    ballSpeed.y = (Math.random() * 4 - 2);
+  }
+
+  resetBall();
+  update();
+</script>
+</body>
+</html>
