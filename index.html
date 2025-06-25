@@ -1,3 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pong with Fast AI</title>
+<style>
+  body, html {
+    margin: 0; padding: 0; height: 100%;
+    background: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: Arial, sans-serif;
+  }
+  #game {
+    position: relative;
+    width: 800px;
+    height: 500px;
+    background: #222;
+    overflow: hidden;
+    border: 2px solid white;
+  }
+  .paddle {
+    position: absolute;
+    width: 15px;
+    height: 100px;
+    background: white;
+    top: 200px;
+    border-radius: 10px;
+  }
+  #playerPaddle { left: 20px; }
+  #aiPaddle { right: 20px; }
+  #ball {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    top: 240px;
+    left: 390px;
+  }
+  #scoreBoard {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    font-size: 30px;
+    user-select: none;
+  }
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="playerPaddle" class="paddle"></div>
+  <div id="aiPaddle" class="paddle"></div>
+  <div id="ball"></div>
+  <div id="scoreBoard"><span id="playerScore">0</span> : <span id="aiScore">0</span></div>
+</div>
+
 <script>
   const game = document.getElementById('game');
   const playerPaddle = document.getElementById('playerPaddle');
@@ -44,14 +105,14 @@
     }
     playerPaddle.style.top = playerPaddlePos + 'px';
 
-    // AI paddle movement - medium fast speed (1.1x)
+    // AI paddle movement - fast speed (1.6x)
     const aiCenter = aiPaddlePos + paddleHeight / 2;
     const ballCenter = ballPos.y + ballSize / 2;
 
     if (aiCenter < ballCenter - 10) {
-      aiPaddlePos += paddleSpeed * 1.1;
+      aiPaddlePos += paddleSpeed * 1.6;
     } else if (aiCenter > ballCenter + 10) {
-      aiPaddlePos -= paddleSpeed * 1.1;
+      aiPaddlePos -= paddleSpeed * 1.6;
     }
     if (aiPaddlePos < 0) aiPaddlePos = 0;
     if (aiPaddlePos > gameHeight - paddleHeight) aiPaddlePos = gameHeight - paddleHeight;
@@ -113,3 +174,5 @@
   resetBall();
   update();
 </script>
+</body>
+</html>
