@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Pong Game</title>
+<title>Pong Game - Increasing Ball Speed</title>
 <style>
   body, html {
     margin: 0; padding: 0; height: 100%;
@@ -130,8 +130,8 @@
       ballPos.y + ballSize >= playerPaddlePos &&
       ballPos.y <= playerPaddlePos + paddleHeight
     ) {
-      ballSpeed.x *= -1;
-      ballPos.x = 20 + 15; // avoid sticking inside paddle
+      ballSpeed.x *= -1.1;  // Reverse direction & increase speed by 10%
+      ballPos.x = 20 + 15;  // avoid sticking inside paddle
     }
 
     // Ball collision with AI paddle
@@ -140,7 +140,7 @@
       ballPos.y + ballSize >= aiPaddlePos &&
       ballPos.y <= aiPaddlePos + paddleHeight
     ) {
-      ballSpeed.x *= -1;
+      ballSpeed.x *= -1.1;  // Reverse direction & increase speed by 10%
       ballPos.x = gameWidth - 20 - 15 - ballSize; // avoid sticking
     }
 
@@ -173,4 +173,3 @@
 </script>
 </body>
 </html>
-
