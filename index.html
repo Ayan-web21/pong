@@ -1,9 +1,9 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Pong Game - Increasing Ball Speed</title>
+<title>Pong Game - DVD Logo Ball</title>
 <style>
   body, html {
     margin: 0; padding: 0; height: 100%;
@@ -32,10 +32,25 @@
   #aiPaddle { right: 20px; }
   #ball {
     position: absolute;
-    width: 20px;
-    height: 20px;
-    background: white;
-    border-radius: 50%;
+    width: 60px;
+    height: 40px;
+    background: linear-gradient(90deg, #00008B 0%, #1E90FF 100%);
+    border: 3px solid white;
+    border-radius: 6px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-weight: bold;
+    font-family: 'Arial Black', Arial, sans-serif;
+    user-select: none;
+    cursor: default;
+    box-sizing: border-box;
+    /* Add a subtle shadow */
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+  }
+  #ball span {
+    font-size: 24px;
   }
   #scoreBoard {
     position: absolute;
@@ -52,7 +67,7 @@
 <div id="game">
   <div id="playerPaddle" class="paddle"></div>
   <div id="aiPaddle" class="paddle"></div>
-  <div id="ball"></div>
+  <div id="ball"><span>DVD</span></div>
   <div id="scoreBoard"><span id="playerScore">0</span> : <span id="aiScore">0</span></div>
 </div>
 
@@ -71,9 +86,10 @@
   let aiScore = 0;
 
   const paddleHeight = playerPaddle.clientHeight;
-  const ballSize = ball.clientWidth;
+  const ballWidth = ball.clientWidth;
+  const ballHeight = ball.clientHeight;
 
-  let ballPos = { x: gameWidth / 2 - ballSize / 2, y: gameHeight / 2 - ballSize / 2 };
+  let ballPos = { x: gameWidth / 2 - ballWidth / 2, y: gameHeight / 2 - ballHeight / 2 };
   let ballSpeed = { x: 4, y: 4 };
 
   let playerPaddlePos = gameHeight / 2 - paddleHeight / 2;
@@ -82,6 +98,23 @@
   const paddleSpeed = 8;
 
   const keys = {};
+
+  // Colors for DVD logo background (nice bright palette)
+  const colors = [
+    '#e74c3c', // red
+    '#27ae60', // green
+    '#f39c12', // orange
+    '#2980b9', // blue
+    '#8e44ad', // purple
+    '#1abc9c', // turquoise
+    '#c0392b', // dark red
+    '#d35400', // dark orange
+  ];
+
+  function randomColor(exclude) {
+    let filtered = colors.filter(c => c !== exclude);
+    return filtered[Math.floor(Math.random() * filtered.length)];
+  }
 
   window.addEventListener('keydown', (e) => {
     keys[e.key.toLowerCase()] = true;
@@ -104,7 +137,7 @@
 
     // AI paddle movement - fast speed (1.6x)
     const aiCenter = aiPaddlePos + paddleHeight / 2;
-    const ballCenter = ballPos.y + ballSize / 2;
+    const ballCenter = ballPos.y + ballHeight / 2;
 
     if (aiCenter < ballCenter - 10) {
       aiPaddlePos += paddleSpeed * 1.6;
@@ -120,35 +153,41 @@
     ballPos.y += ballSpeed.y;
 
     // Ball collision with top/bottom walls
-    if (ballPos.y <= 0 || ballPos.y + ballSize >= gameHeight) {
+    if (ballPos.y <= 0 || ballPos.y + ballHeight >= gameHeight) {
       ballSpeed.y *= -1;
     }
 
     // Ball collision with player paddle
     if (
       ballPos.x <= 20 + 15 &&
-      ballPos.y + ballSize >= playerPaddlePos &&
+      ballPos.y + ballHeight >= playerPaddlePos &&
       ballPos.y <= playerPaddlePos + paddleHeight
     ) {
-      ballSpeed.x *= -1.1;  // Reverse direction & increase speed by 10%
-      ballPos.x = 20 + 15;  // avoid sticking inside paddle
+      ballSpeed.x *= -1.1;  // Reverse & speed up
+      ballPos.x = 20 + 15;  // avoid sticking
+
+      // Change color
+      changeBallColor();
     }
 
     // Ball collision with AI paddle
     if (
-      ballPos.x + ballSize >= gameWidth - 20 - 15 &&
-      ballPos.y + ballSize >= aiPaddlePos &&
+      ballPos.x + ballWidth >= gameWidth - 20 - 15 &&
+      ballPos.y + ballHeight >= aiPaddlePos &&
       ballPos.y <= aiPaddlePos + paddleHeight
     ) {
-      ballSpeed.x *= -1.1;  // Reverse direction & increase speed by 10%
-      ballPos.x = gameWidth - 20 - 15 - ballSize; // avoid sticking
+      ballSpeed.x *= -1.1;  // Reverse & speed up
+      ballPos.x = gameWidth - 20 - 15 - ballWidth; // avoid sticking
+
+      // Change color
+      changeBallColor();
     }
 
     // Score points
     if (ballPos.x < 0) {
       aiScore++;
       resetBall();
-    } else if (ballPos.x + ballSize > gameWidth) {
+    } else if (ballPos.x + ballWidth > gameWidth) {
       playerScore++;
       resetBall();
     }
@@ -162,10 +201,19 @@
     requestAnimationFrame(update);
   }
 
+  function changeBallColor() {
+    let currentColor = ball.style.background;
+    let newColor = randomColor(currentColor);
+    // Apply gradient with the new color and a lighter tone
+    ball.style.background = `linear-gradient(90deg, ${newColor} 0%, #FFFFFF 100%)`;
+  }
+
   function resetBall() {
-    ballPos = { x: gameWidth / 2 - ballSize / 2, y: gameHeight / 2 - ballSize / 2 };
+    ballPos = { x: gameWidth / 2 - ballWidth / 2, y: gameHeight / 2 - ballHeight / 2 };
     ballSpeed.x = (Math.random() > 0.5 ? 1 : -1) * 4;
     ballSpeed.y = (Math.random() * 4 - 2);
+    // Reset to initial blue-ish gradient
+    ball.style.background = 'linear-gradient(90deg, #00008B 0%, #1E90FF 100%)';
   }
 
   resetBall();
